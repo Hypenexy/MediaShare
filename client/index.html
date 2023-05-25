@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Video Player</title>
+    <link rel="stylesheet" href="style">
+</head>
+<body>
+    <div id="active">
+        <div>
+            <h1>Click anywhere</h1>
+            <h2>to become active</h2>
+        </div>
+    </div>
+	<video src="/videoplayer" width="1080px"></video>
+    <div id="users"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var video = document.getElementsByTagName("video")[0];
+        var socket = io();
+
+        var allowedFunctions = ["ownership", "seek", "playback"];
+        var ownership = false;
+
+        function sendChanges(data){
+            if(ownership==true){
+                socket.emit("data", data);
+            }
+        }
+
+        socket.on("data", (data) => {
+            if(!allowedFunctions.includes(data[0])){
+                return "illegal function";
+            }
+            if(data[0]=="ownership" && data[1]==true){
+                ownership = true;
+                video.controls = true;
+                ready();
+            }
+            if(data[0]=="seek"){
+                video.currentTime = data[1];
+            }
+            if(data[0]=="playback"){
+                if(data[1]==true){
+                    video.play();
+                }
+                else{
+                    video.pause();
+                }
+            }
+        });
+
+        video.addEventListener("timeupdate", (event) => {
+            if(video.paused){
+                sendChanges(["seek", video.currentTime]);
+            }
+        });
+        video.addEventListener("play", () => {
+            sendChanges(["playback", true]);
+        });
+        video.addEventListener("pause", () => {
+            sendChanges(["playback", false]);
+        });
+        window.addEventListener("keydown", (event) => {
+            if(event.key == "ArrowRight" || event.key == "ArrowLeft"){
+                sendChanges(["seek", video.currentTime]);
+            }
+        });
+
+        // Info
+
+        var users = document.getElementById("users");
+
+        function sendInfo(data){
+            socket.emit("info", data);
+        }
+
+        function addUser(userdata, unready){
+            var userEl = document.createElement("div");
+            userEl.classList.add("user");
+            if(unready==true){
+                userEl.classList.add("unready");
+            }
+            userEl.classList.add(userdata.id);
+            userEl.innerHTML = "<p>"+userdata.ip+"</p>";
+            users.appendChild(userEl);
+        }
+
+        socket.on("info", (data) => {
+            if(data[0]=="join"){
+                addUser(data[1], true);
+            }
+            if(data[0]=="clients"){
+                data[1].forEach(element => {
+                    addUser(element);
+                });
+            }
+            if(data[0]=="ready"){
+                users.getElementsByClassName(data[1].id)[0].classList.remove("unready");
+            }
+            if(data[0]=="leave"){
+                users.getElementsByClassName(data[1].id)[0].remove();
+            }
+        });
+
+        const active = document.getElementById("active");
+        function ready(){
+            sendInfo("ready");
+            active.remove();
+        }
+        if(ownership==true){ // This shouldn't be true in any case
+            ready();
+        }
+        active.addEventListener("click", function(){
+            if(active.nodeType){
+                ready();
+            }
+        })
+        document.addEventListener("keydown", function(){
+            if(active.nodeType){
+                ready();
+            }
+        })
+    </script>
+</body>
+</html>
