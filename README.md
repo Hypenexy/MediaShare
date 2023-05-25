@@ -10,12 +10,12 @@ In a command terminal:
 
 Download the repository
 ```
-git clone https://github.com/Hypenexy/NodeJS-FileExplorer.git
+git clone https://github.com/Hypenexy/MediaShare.git
 ```
 
 Enter the directory
 ```
-cd NodeJS-FileExplorer
+cd MediaShare
 ```
 
 Download dependencies
