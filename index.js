@@ -14,9 +14,9 @@ app.get('/style', (req, res) => {
 	res.sendFile(__dirname + '/client/style.css');
 });
 
+var videoPath = 'C:/Users/Hypenexy/Videos/2022-09-10 02-55-01.mp4';
 app.get('/videoplayer', (req, res) => {
 	const range = req.headers.range;
-	const videoPath = 'C:/Users/Hypenexy/Videos/2022-09-10 02-55-01.mp4';
 	const videoSize = fs.statSync(videoPath).size;
 	const chunkSize = 1 * 1e6;
 	const start = Number(range.replace(/\D/g, ""));
@@ -26,17 +26,18 @@ app.get('/videoplayer', (req, res) => {
 		"Content-Range": `bytes ${start}-${end}/${videoSize}`,
 		"Accept-Ranges": "bytes",
 		"Content-Length": contentLength,
-		"Content-Type": "video/mp4"
+		"Content-Type": "video/mp4",
+        "Cache-Control": "no-store"
 	};
 	res.writeHead(206, headers);
-	const stream = fs.createReadStream(videoPath, {
+	var stream = fs.createReadStream(videoPath, {
 		start,
 		end
 	});
 	stream.pipe(res);
 });
 
-const clients = []; // A better aproach would be to make this a JSON, that way dynamic data can be stored on server. 
+const clients = []; // A better aproach would be to make this a JSON, that way dynamic data can be stored on server. But users are already json you idiot.
 
 io.on('connection', (socket) => {
     var ownership = false;
@@ -49,7 +50,7 @@ io.on('connection', (socket) => {
     clients.push(userInfo);
     socket.broadcast.emit("info", ["join", userInfo]);
     socket.emit("info", ["clients", clients]);
-    
+
     socket.on('disconnect', () => {
         socket.broadcast.emit("info", ["leave", userInfo]);
         var index = clients.indexOf(userInfo);
@@ -63,10 +64,15 @@ io.on('connection', (socket) => {
 
     socket.on("data", (value) => {
         if(ownership==true){
+            if(value[0]=="track"){
+                videoPath = value[1];
+                socket.emit("data", [value[0]]);
+                return;
+            }
             socket.broadcast.emit("data", value);
         }
     });
-    
+
     socket.on("info", (value) => {
         socket.broadcast.emit("info", [value, {id: socket.id}]);
     });

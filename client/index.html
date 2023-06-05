@@ -11,14 +11,15 @@
             <h2>to become active</h2>
         </div>
     </div>
-	<video src="/videoplayer" width="1080px"></video>
+	<video src="/videoplayer"></video>
+    <div id="options"></div>
     <div id="users"></div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var video = document.getElementsByTagName("video")[0];
         var socket = io();
 
-        var allowedFunctions = ["ownership", "seek", "playback"];
+        var allowedFunctions = ["ownership", "seek", "playback", "track"];
         var ownership = false;
 
         function sendChanges(data){
@@ -28,12 +29,14 @@
         }
 
         socket.on("data", (data) => {
+            console.log(data)
             if(!allowedFunctions.includes(data[0])){
                 return "illegal function";
             }
             if(data[0]=="ownership" && data[1]==true){
                 ownership = true;
                 video.controls = true;
+                activeOwnerOptions();
                 ready();
             }
             if(data[0]=="seek"){
@@ -46,6 +49,9 @@
                 else{
                     video.pause();
                 }
+            }
+            if(data[0]=="track"){
+                video.load();
             }
         });
 
@@ -114,12 +120,33 @@
             if(active.nodeType){
                 ready();
             }
-        })
+        });
         document.addEventListener("keydown", function(){
             if(active.nodeType){
                 ready();
             }
-        })
+        });
+
+        const options = document.getElementById("options");
+        const pingEl = document.createElement("p");
+        options.appendChild(pingEl);
+        function activeOwnerOptions(){
+            const label = document.createElement("label");
+            const text = document.createElement("p");
+            text.innerText = "Video track";
+            const track = document.createElement("input");
+            track.placeholder = "File path (example: C:/Users/Hypenexy/Videos/2022-09-10 02-55-01.mp4)"
+            label.appendChild(text);
+            label.appendChild(track);
+            options.appendChild(label);
+            
+            track.addEventListener("keydown", function(e){
+                if(e.key == "Enter"){
+                    sendChanges(["track", track.value]);
+                }
+            })
+        }
+
     </script>
 </body>
 </html>

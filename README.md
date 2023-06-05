@@ -29,3 +29,16 @@ node index.js
 ```
 
 Anyone with access to your device by internet can view it at http://[Your IP]:3000
+
+
+## TODO
+
+- Sync all clients to match in real time
+
+Maybe like so
+
+User1: 2ms
+
+User2: 60ms
+
+User3: 140ms
